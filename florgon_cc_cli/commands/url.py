@@ -11,7 +11,9 @@ def url():
 
 @url.command()
 @click.option("-o", "--only-url", is_flag=True, default=False, help="Outputs single short url.")
-@click.option("-d", "--do-not-save", is_flag=True, default=False, help="Do not save url in local history.")
+@click.option(
+    "-d", "--do-not-save", is_flag=True, default=False, help="Do not save url in local history."
+)
 @click.argument("long_url", type=str)
 def create(only_url: bool, do_not_save: bool, long_url: str):
     """Creates short url."""

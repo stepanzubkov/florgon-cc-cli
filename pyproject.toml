@@ -24,6 +24,9 @@ requests = "^2.28.2"
 [tool.poetry.scripts]
 florgon-cc = "florgon_cc_cli.main:main"
 
+[tool.black]
+line-length = 100
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
