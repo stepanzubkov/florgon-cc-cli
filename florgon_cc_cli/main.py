@@ -6,7 +6,7 @@
 """
 import click
 
-from commands import url
+from florgon_cc_cli.commands import url
 
 
 @click.group()
