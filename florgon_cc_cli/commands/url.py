@@ -36,3 +36,5 @@ def create(only_url: bool, do_not_save: bool, long_url: str):
     click.echo(f"Expires at: {datetime.fromtimestamp(response['expires_at'])}")
     if response["stats_is_public"]:
         click.echo("Stats is public")
+
+
