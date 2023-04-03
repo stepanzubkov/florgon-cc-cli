@@ -32,6 +32,6 @@ def extract_token_from_redirect_uri(redirect_uri: str) -> Optional[str]:
     :rtype: Optional[str]
     :returns: token
     """
-    tokens = re.findall("#token=(.*)&", redirect_uri)
+    tokens = re.findall(r"#token=([\w-]+\.[\w-]+\.[\w-]+)&", redirect_uri)
     if len(tokens) == 1:
         return tokens[0]
