@@ -14,8 +14,14 @@ def execute_api_method(
     *,
     data: Dict[str, Any] = {},
     params: Dict[str, Any] = {},
-    auth_token: str | None = None
+    access_token: str | None = None,
 ) -> Dict[str, Any]:
     request_url = f"{config.CC_API_URL}/{api_method}"
-    response = requests.request(http_method, request_url, json=data, params=params)
+    response = requests.request(
+        http_method,
+        request_url,
+        json=data,
+        params=params,
+        headers={"Authorization": access_token} if access_token else {},
+    )
     return response.json()
