@@ -38,3 +38,21 @@ def get_value_from_config(key: str) -> Any:
         user_config = toml.load(f)
 
     return user_config.get(key)
+
+def delete_value_from_config(key: str) -> None:
+    """
+    Deletes value from config by key.
+    :param str key: key for value
+    :rtype: None
+    """
+    config.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    config.CONFIG_FILE.touch(exist_ok=True)
+
+    with open(config.CONFIG_FILE, "r") as f:
+        user_config = toml.load(f)
+
+    if key in user_config:
+        user_config.pop(key)
+
+    with open(config.CONFIG_FILE, "w") as f:
+        toml.dump(user_config, f)
