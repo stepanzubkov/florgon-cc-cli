@@ -12,6 +12,7 @@ from florgon_cc_cli.services.url import (
     extract_hash_from_short_url,
     get_url_info_by_hash,
     get_url_stats_by_hash,
+    get_urls_list,
 )
 
 
@@ -123,3 +124,15 @@ def stats(short_url: str, referers_as: str, dates_as: str):
         for date in response["by_dates"]:
             click.echo(f"\t{date} - {response['by_dates'][date]}"
                        + "%" * int(dates_as == "percent"))
+
+
+@url.command()
+def list():
+    success, response = get_urls_list(access_token=get_value_from_config("access_token"))
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        return
+
+    click.echo("Your urls:")
+    for url in response:
+        click.echo(f"{build_open_url(url['hash'])} - {url['redirect_url']}")

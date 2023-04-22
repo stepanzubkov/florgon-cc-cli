@@ -21,7 +21,8 @@ def create_url(
     """
     Creates short url from long url.
     :param str long_url: url which short url will be redirect
-    :param Optional[str] auth_token: Florgon OAuth token that used for authentification. Defaults to None
+    :param Optional[str] auth_token: Florgon OAuth token that used for authentification.
+                                     Defaults to None
     :return: Tuple with two elements.
              First is a creaton status (True if successfully).
              Seconds is a response body.
@@ -52,7 +53,6 @@ def get_url_info_by_hash(hash: str) -> Tuple[bool, Dict[str, Any]]:
     if "success" in response:
         return True, response["success"]["url"]
     return False, response["error"]
-
 
 
 def get_url_stats_by_hash(
@@ -96,3 +96,15 @@ def extract_hash_from_short_url(short_url: str) -> str:
 
     return short_url_hashes[0]
 
+
+def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Dict[str, Any]]:
+    """
+    Returns user's urls by access_token.
+    :param Optional[str] access_token: access token
+    :rtype: Dict[str, Any]
+    :return: JSON API response
+    """
+    response = execute_api_method("GET", "urls/", access_token=access_token)
+    if "success" in response:
+        return True, response["success"]["urls"]
+    return False, response["error"]
