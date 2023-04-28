@@ -2,11 +2,16 @@
     Services for working with single url API.
 """
 import re
-from typing import Any, Dict, Tuple, Optional
+from datetime import datetime
+from typing import Any, Dict, Tuple, Optional, Union
 
 import click
+from pick import pick
 
 from florgon_cc_cli.services.api import execute_api_method
+from florgon_cc_cli.services.config import get_value_from_config
+from florgon_cc_cli.models.url import Url
+from florgon_cc_cli.models.error import Error
 from florgon_cc_cli import config
 
 
@@ -17,7 +22,7 @@ def build_open_url(hash: str) -> str:
 
 def create_url(
     long_url: str, stats_is_public: bool = False, access_token: Optional[str] = None
-) -> Tuple[bool, Dict[str, Any]]:
+) -> Tuple[bool, Union[Url, Error]]:
     """
     Creates short url from long url.
     :param str long_url: url which short url will be redirect
@@ -26,7 +31,7 @@ def create_url(
     :return: Tuple with two elements.
              First is a creaton status (True if successfully).
              Seconds is a response body.
-    :rtype: Tuple[bool, Dict[str, Any]]
+    :rtype: Tuple[bool, Url] if request is successfully, else Tuple[bool, Error]
     """
     response = execute_api_method(
         "POST",
@@ -40,14 +45,14 @@ def create_url(
     return False, response["error"]
 
 
-def get_url_info_by_hash(hash: str) -> Tuple[bool, Dict[str, Any]]:
+def get_url_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
     """
     Returns info about short url by hash.
     :param str hash: short url hash
     :return: Tuple with two elements.
              First is a response status (True if successfully).
              Seconds is a response body.
-    :rtype: Tuple[bool, Dict[str, any]]
+    :rtype: Tuple[bool, Url] if request is successfully, else Tuple[bool, Error]
     """
     response = execute_api_method("GET", f"urls/{hash}/")
     if "success" in response:
@@ -60,14 +65,14 @@ def get_url_stats_by_hash(
     url_views_by_referers_as: str = "percent",
     url_views_by_dates_as: str = "percent",
     access_token: Optional[str] = None
-) -> Tuple[bool, Dict[str, Any]]:
+) -> Tuple[bool, Union[Url, Error]]:
     """
     Returns statistics about short url by hash.
     :param str hash: short url hash
     :return: Tuple with two elements.
              First is a response status (True if successfully).
              Seconds is a response body.
-    :rtype: Tuple[bool, Dict[str, any]]
+    :rtype: Tuple[bool, Url] if request is successfully, else Tuple[bool, Error]
     """
     response = execute_api_method("GET", f"urls/{hash}/stats", params={
         "referer_views_value_as": url_views_by_referers_as,
@@ -97,14 +102,30 @@ def extract_hash_from_short_url(short_url: str) -> str:
     return short_url_hashes[0]
 
 
-def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Dict[str, Any]]:
+def request_hash_from_urls_list() -> str:
+    success, response = get_urls_list(access_token=get_value_from_config("access_token"))
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        click.get_current_context().exit(1)
+
+    urls = [
+        f"{build_open_url(url['hash'])} - {url['redirect_url']}"
+        for url in response
+        if url["expires_at"] > datetime.now().timestamp()
+    ]
+    _, index = pick(urls, "Choose one from your urls:", indicator=">")
+    return response[index]["hash"]
+
+
+def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Url, Error]]:
     """
     Returns user's urls by access_token.
     :param Optional[str] access_token: access token
-    :rtype: Dict[str, Any]
-    :return: JSON API response
+    :rtype: Tuple[bool, Url] if request is successfully, else Tuple[bool, Error]
     """
     response = execute_api_method("GET", "urls/", access_token=access_token)
     if "success" in response:
         return True, response["success"]["urls"]
     return False, response["error"]
+
+
