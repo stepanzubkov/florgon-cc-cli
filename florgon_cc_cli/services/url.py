@@ -3,7 +3,7 @@
 """
 import re
 from datetime import datetime
-from typing import Any, Dict, Tuple, Optional, Union
+from typing import Any, Dict, Tuple, Optional, Union, NoReturn
 
 import click
 from pick import pick
@@ -83,12 +83,13 @@ def get_url_stats_by_hash(
     return False, response["error"]
 
 
-def extract_hash_from_short_url(short_url: str) -> str:
+def extract_hash_from_short_url(short_url: str) -> Union[str, NoReturn]:
     """
     Extracts hash from short url.
     :param str short_url: short url
     :rtype: str
-    :return: url hash
+    :rtype: NoReturn
+    :return: url hash or exit application
     """
     short_url_hashes = re.findall(f"^{config.URL_OPEN_PROVIDER}" + r"/([a-zA-Z0-9]{6})$", short_url)
     if not short_url_hashes:

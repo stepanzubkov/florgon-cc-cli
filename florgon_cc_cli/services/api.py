@@ -1,9 +1,10 @@
 """
     Services for working with Florgon CC Api.
 """
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, NoReturn, Union
 
 import requests
+import click
 
 import florgon_cc_cli.config as config
 from florgon_cc_cli.services.config import get_value_from_config
@@ -16,7 +17,7 @@ def execute_api_method(
     data: Dict[str, Any] = {},
     params: Dict[str, Any] = {},
     access_token: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> Dict[str, Any] | NoReturn:
     """
     Executes API method.
     :param str http_method: GET, POST, PUT, PATCH, DELETE or OPTIONS
@@ -25,7 +26,8 @@ def execute_api_method(
     :param Dict[str, Any] params: GET data
     :param Optional[str] access_token: Florgon OAuth token
     :rtype: Dict[str, Any]
-    :return: JSON response from API
+    :rtype: NoReturn
+    :return: JSON response from API or exit application
     """
     request_url = f"{get_api_host()}/{api_method}"
     response = requests.request(
@@ -35,7 +37,16 @@ def execute_api_method(
         params=params,
         headers={"Authorization": access_token} if access_token else {},
     )
-    return response.json()
+    ctx = click.get_current_context()
+    if ctx.obj["DEBUG"]:
+        click.secho(f"API response from {request_url} with HTTP code {response.status_code}:", fg="yellow")
+        click.echo(response.text)
+
+    try:
+        return response.json()
+    except requests.exceptions.JSONDecodeError:
+        click.secho("Unable to decode API response as JSON!", fg="red", err=True)
+        ctx.exit(1)
 
 
 def get_api_host() -> str:
