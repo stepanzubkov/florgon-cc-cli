@@ -6,7 +6,7 @@
 """
 import click
 
-from florgon_cc_cli.commands import url, login, logout, host
+from florgon_cc_cli.commands import url, login, logout, host, config
 
 
 @click.group()
@@ -22,6 +22,7 @@ main.add_command(url)
 main.add_command(login)
 main.add_command(logout)
 main.add_command(host)
+main.add_command(config)
 
 if __name__ == "__main__":
     main()
