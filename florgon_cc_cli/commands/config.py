@@ -30,3 +30,11 @@ def show(raw: bool):
     user_config = deserialize_config()
     for key, value in user_config.items():
         click.echo(click.style(f"{key:20}", fg="green") + f"{value}")
+
+
+@config.command()
+def show_path():
+    """
+    Prints path of config file.
+    """
+    click.echo(str(florgon_cc_cli.config.CONFIG_FILE))
