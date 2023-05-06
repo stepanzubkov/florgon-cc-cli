@@ -4,14 +4,16 @@
 from datetime import datetime
 
 import click
-from florgon_cc_cli.services.config import get_value_from_config
 
+from florgon_cc_cli.services.config import get_value_from_config
 from florgon_cc_cli.services.url import (
     build_open_url,
     create_url,
     extract_hash_from_short_url,
     get_url_info_by_hash,
     get_url_stats_by_hash,
+    get_urls_list,
+    request_hash_from_urls_list,
 )
 
 
@@ -66,10 +68,15 @@ def create(
 
 
 @url.command()
-@click.argument("short_url", type=str)
+@click.option("-s", "--short-url", type=str, help="Short url.")
 def info(short_url: str):
     """Prints main information about short url."""
-    short_url_hash = extract_hash_from_short_url(short_url)
+    if short_url:
+        short_url_hash = extract_hash_from_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your urls.")
+        short_url_hash = request_hash_from_urls_list()
+
     success, response = get_url_info_by_hash(short_url_hash)
     if not success:
         click.secho(response["message"], err=True, fg="red")
@@ -83,7 +90,7 @@ def info(short_url: str):
 
 
 @url.command()
-@click.argument("short_url", type=str)
+@click.option("-s", "--short-url", type=str, help="Short url.")
 @click.option(
     "-r",
     "--referers-as",
@@ -100,7 +107,12 @@ def info(short_url: str):
 )
 def stats(short_url: str, referers_as: str, dates_as: str):
     """Prints url views statistics."""
-    short_url_hash = extract_hash_from_short_url(short_url)
+    if short_url:
+        short_url_hash = extract_hash_from_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your urls.")
+        short_url_hash = request_hash_from_urls_list()
+
     success, response = get_url_stats_by_hash(
         short_url_hash,
         url_views_by_referers_as=referers_as,
@@ -111,15 +123,38 @@ def stats(short_url: str, referers_as: str, dates_as: str):
         click.secho(response["message"], err=True, fg="red")
         return
 
-    click.echo("Total views: " + click.style(response['total'], fg="green"))
+    click.echo("Total views: " + click.style(response["total"], fg="green"))
     click.echo("Views by referers:")
     if response.get("by_referers"):
         for referer in response["by_referers"]:
-            click.echo(f"\t{referer} - {response['by_referers'][referer]}"
-                       + "%" * int(referers_as == "percent"))
+            click.echo(
+                f"\t{referer} - {response['by_referers'][referer]}"
+                + "%" * int(referers_as == "percent")
+            )
 
     click.echo("Views by dates:")
     if response.get("by_dates"):
         for date in response["by_dates"]:
-            click.echo(f"\t{date} - {response['by_dates'][date]}"
-                       + "%" * int(dates_as == "percent"))
+            click.echo(
+                f"\t{date} - {response['by_dates'][date]}" + "%" * int(dates_as == "percent")
+            )
+
+
+@url.command()
+def list():
+    """
+    Prints list of short urls created by user. Auth required.
+    """
+    success, response = get_urls_list(access_token=get_value_from_config("access_token"))
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        return
+
+    click.echo("Your urls:")
+    for url in response:
+        if url["is_expired"]:
+            click.secho(
+                f"{build_open_url(url['hash'])} - {url['redirect_url']} (expired)", fg="red"
+            )
+        else:
+            click.echo(f"{build_open_url(url['hash'])} - {url['redirect_url']}")
