@@ -21,8 +21,10 @@ def build_sso_login_url(
     Defaults to "https://florgon.com/oauth/blank"
     :param str oauth_screen_url: Login page url. Defaults to "https://florgon.com/oauth/authorize"
     """
-    return (f"{oauth_screen_url}?client_id={client_id}&redirect_uri={redirect_uri}"
-            f"&scope={scope}&response_type={response_type}")
+    return (
+        f"{oauth_screen_url}?client_id={client_id}&redirect_uri={redirect_uri}"
+        f"&scope={scope}&response_type={response_type}"
+    )
 
 
 def extract_token_from_redirect_uri(redirect_uri: str) -> Optional[str]:

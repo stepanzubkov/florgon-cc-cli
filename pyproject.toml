@@ -1,11 +1,11 @@
 [tool.poetry]
 name = "florgon-cc-cli"
-version = "0.5.0"
+version = "0.6.0"
 license = "MIT"
 homepage = "https://cc.florgon.com/"
 keywords = ["cli", "url shortener", "paste manager"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: End Users/Desktop",
     "Topic :: Utilities",

@@ -8,6 +8,7 @@ class UrlLink(TypedDict):
     """
     Single url link.
     """
+
     href: str
 
 
@@ -15,6 +16,7 @@ class UrlLinks(TypedDict):
     """
     Url links in url field `_links`.
     """
+
     qr: UrlLink
     stats: Optional[UrlLink]
 
@@ -23,6 +25,7 @@ class Url(TypedDict):
     """
     Url model from API.
     """
+
     id: int
     redirect_url: str
     hash: str
@@ -31,4 +34,3 @@ class Url(TypedDict):
     stats_is_public: bool
     is_deleted: bool
     _links: UrlLinks
-

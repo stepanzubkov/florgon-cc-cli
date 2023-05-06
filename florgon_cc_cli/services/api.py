@@ -39,7 +39,9 @@ def execute_api_method(
     )
     ctx = click.get_current_context()
     if ctx.obj["DEBUG"]:
-        click.secho(f"API response from {request_url} with HTTP code {response.status_code}:", fg="yellow")
+        click.secho(
+            f"API response from {request_url} with HTTP code {response.status_code}:", fg="yellow"
+        )
         click.echo(response.text)
 
     try:
@@ -56,4 +58,3 @@ def get_api_host() -> str:
     :return: API host
     """
     return get_value_from_config("api_host") or config.CC_API_URL
-

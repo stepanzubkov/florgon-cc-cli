@@ -15,7 +15,9 @@ def config():
 
 
 @config.command()
-@click.option("-r", "--raw", is_flag=True, default=False, help="Prints config 'as is', in toml format.")
+@click.option(
+    "-r", "--raw", is_flag=True, default=False, help="Prints config 'as is', in toml format."
+)
 def show(raw: bool):
     """
     Prints user config.

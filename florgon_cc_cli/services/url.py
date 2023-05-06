@@ -64,7 +64,7 @@ def get_url_stats_by_hash(
     hash: str,
     url_views_by_referers_as: str = "percent",
     url_views_by_dates_as: str = "percent",
-    access_token: Optional[str] = None
+    access_token: Optional[str] = None,
 ) -> Tuple[bool, Union[Url, Error]]:
     """
     Returns statistics about short url by hash.
@@ -74,10 +74,15 @@ def get_url_stats_by_hash(
              Seconds is a response body.
     :rtype: Tuple[bool, Url] if request is successfully, else Tuple[bool, Error]
     """
-    response = execute_api_method("GET", f"urls/{hash}/stats", params={
-        "referer_views_value_as": url_views_by_referers_as,
-        "dates_views_value_as": url_views_by_dates_as,
-    }, access_token=access_token)
+    response = execute_api_method(
+        "GET",
+        f"urls/{hash}/stats",
+        params={
+            "referer_views_value_as": url_views_by_referers_as,
+            "dates_views_value_as": url_views_by_dates_as,
+        },
+        access_token=access_token,
+    )
     if "success" in response:
         return True, response["success"]["views"]
     return False, response["error"]
@@ -128,5 +133,3 @@ def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Url, 
     if "success" in response:
         return True, response["success"]["urls"]
     return False, response["error"]
-
-

@@ -33,6 +33,7 @@ def get_value_from_config(key: str) -> Any:
 
     return user_config.get(key)
 
+
 def delete_value_from_config(key: str) -> None:
     """
     Deletes value from config by key.
@@ -66,4 +67,3 @@ def create_config_file() -> None:
     """
     config.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     config.CONFIG_FILE.touch(exist_ok=True)
-

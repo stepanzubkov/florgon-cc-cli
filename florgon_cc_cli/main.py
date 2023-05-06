@@ -10,8 +10,13 @@ from florgon_cc_cli.commands import url, login, logout, host, config
 
 
 @click.group()
-@click.option("-D", "--debug", is_flag=True, default=False,
-              help="Enable debug features like printing api responses.")
+@click.option(
+    "-D",
+    "--debug",
+    is_flag=True,
+    default=False,
+    help="Enable debug features like printing api responses.",
+)
 @click.pass_context
 def main(ctx: click.Context, debug: bool):
     ctx.obj = {"DEBUG": debug}
