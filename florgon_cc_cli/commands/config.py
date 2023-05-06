@@ -27,5 +27,4 @@ def show(raw: bool):
 
     user_config = deserialize_config()
     for key, value in user_config.items():
-        click.echo(f"{key}\t{value}")
-
+        click.echo(click.style(f"{key:20}", fg="green") + f"\t{value}")
