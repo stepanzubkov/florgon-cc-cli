@@ -14,6 +14,7 @@ from florgon_cc_cli.services.url import (
     get_url_stats_by_hash,
     get_urls_list,
     request_hash_from_urls_list,
+    delete_url_by_hash,
 )
 
 
@@ -158,3 +159,26 @@ def list():
             )
         else:
             click.echo(f"{build_open_url(url['hash'])} - {url['redirect_url']}")
+
+
+@url.command()
+@click.option("-s", "--short-url", type=str, help="Short url.")
+def delete(short_url: str):
+    """
+    Deletes short url. Auth Required.
+    """
+    if short_url:
+        short_url_hash = extract_hash_from_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your urls.")
+        short_url_hash = request_hash_from_urls_list()
+
+    success, *response = delete_url_by_hash(
+        hash=short_url_hash,
+        access_token=get_value_from_config("access_token"),
+    )
+    if not success:
+        click.secho(response[0]["message"], err=True, fg="red")
+        return
+
+    click.secho("Url was successfully deleted!", fg="green")
