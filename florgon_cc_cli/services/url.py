@@ -3,7 +3,7 @@
 """
 import re
 from datetime import datetime
-from typing import Any, Dict, Tuple, Optional, Union, NoReturn
+from typing import Any, Tuple, Optional, Union, NoReturn
 
 import click
 from pick import pick
@@ -143,12 +143,29 @@ def delete_url_by_hash(hash: str, access_token: Optional[str] = None) -> Union[T
     :param str hash: url hash
     :param Optional[str] access_token: access token
     :return: Tuple with two or one elements.
-             First is a creaton status (True if successfully).
+             First is a deletion status (True if successfully).
              Seconds is a response body (if error).
     :rtype: Tuple[True] if successfully deleted, Tuple[False, Error] if error occured,
             or exit application if cannot decode to json
     """
     response = execute_api_method("DELETE", f"urls/{hash}/", access_token=access_token)
+    if response.status_code == 204:
+        return True,
+    return try_decode_response_to_json(response)
+
+
+def clear_url_stats_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+    """
+    Clears user's url stats by access_token.
+    :param str hash: url hash
+    :param Optional[str] access_token: access token
+    :return: Tuple with two or one elements.
+             First is a clearsing status (True if successfully).
+             Seconds is a response body (if error).
+    :rtype: Tuple[True] if successfully cleared, Tuple[False, Error] if error occured,
+            or exit application if cannot decode to json
+    """
+    response = execute_api_method("DELETE", f"urls/{hash}/stats", access_token=access_token)
     if response.status_code == 204:
         return True,
     return try_decode_response_to_json(response)

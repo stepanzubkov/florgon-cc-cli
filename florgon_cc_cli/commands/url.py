@@ -15,6 +15,7 @@ from florgon_cc_cli.services.url import (
     get_urls_list,
     request_hash_from_urls_list,
     delete_url_by_hash,
+    clear_url_stats_by_hash,
 )
 
 
@@ -125,16 +126,16 @@ def stats(short_url: str, referers_as: str, dates_as: str):
         return
 
     click.echo("Total views: " + click.style(response["total"], fg="green"))
-    click.echo("Views by referers:")
     if response.get("by_referers"):
+        click.echo("Views by referers:")
         for referer in response["by_referers"]:
             click.echo(
                 f"\t{referer} - {response['by_referers'][referer]}"
                 + "%" * int(referers_as == "percent")
             )
 
-    click.echo("Views by dates:")
     if response.get("by_dates"):
+        click.echo("Views by dates:")
         for date in response["by_dates"]:
             click.echo(
                 f"\t{date} - {response['by_dates'][date]}" + "%" * int(dates_as == "percent")
@@ -182,3 +183,26 @@ def delete(short_url: str):
         return
 
     click.secho("Url was successfully deleted!", fg="green")
+
+
+@url.command()
+@click.option("-s", "--short-url", type=str, help="Short url.")
+def clear_stats(short_url: str):
+    """
+    Clears short url stats. Auth required.
+    """
+    if short_url:
+        short_url_hash = extract_hash_from_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your urls.")
+        short_url_hash = request_hash_from_urls_list()
+
+    success, *response = clear_url_stats_by_hash(
+        hash=short_url_hash,
+        access_token=get_value_from_config("access_token")
+    )
+    if not success:
+        click.secho(response[0]["message"], err=True, fg="red")
+        return
+
+    click.secho("Url stats was successfully cleared!", fg="green")
