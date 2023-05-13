@@ -17,9 +17,12 @@ from florgon_cc_cli.commands import url, login, logout, host, config
     default=False,
     help="Enable debug features like printing api responses.",
 )
+@click.option(
+    "-a", "--anonymous", is_flag=True, default=False, help="Do not use access token for request."
+)
 @click.pass_context
-def main(ctx: click.Context, debug: bool):
-    ctx.obj = {"DEBUG": debug}
+def main(ctx: click.Context, debug: bool, anonymous: bool):
+    ctx.obj = {"DEBUG": debug, "ANONYMOUS": anonymous}
     """Florgon CC CLI - url shortener and paste manager."""
 
 

@@ -5,7 +5,7 @@ from datetime import datetime
 
 import click
 
-from florgon_cc_cli.services.config import get_value_from_config
+from florgon_cc_cli.services.config import get_value_from_config, get_access_token
 from florgon_cc_cli.services.url import (
     build_open_url,
     create_url,
@@ -30,9 +30,6 @@ def url():
     "-d", "--do-not-save", is_flag=True, default=False, help="Do not save url in local history."
 )
 @click.option(
-    "-a", "--anonymous", is_flag=True, default=False, help="Do not use access token for request."
-)
-@click.option(
     "-s",
     "--stats-is-public",
     is_flag=True,
@@ -41,10 +38,10 @@ def url():
 )
 @click.argument("long_url", type=str)
 def create(
-    only_url: bool, do_not_save: bool, long_url: str, anonymous: bool, stats_is_public: bool
+    only_url: bool, do_not_save: bool, long_url: str, stats_is_public: bool
 ):
     """Creates short url."""
-    access_token = None if anonymous else get_value_from_config("access_token")
+    access_token = get_access_token()
     if stats_is_public and access_token is None:
         click.secho("Auth required for --stats-is-public flag!", fg="red", err=True)
         return
@@ -119,7 +116,7 @@ def stats(short_url: str, referers_as: str, dates_as: str):
         short_url_hash,
         url_views_by_referers_as=referers_as,
         url_views_by_dates_as=dates_as,
-        access_token=get_value_from_config("access_token"),
+        access_token=get_access_token(),
     )
     if not success:
         click.secho(response["message"], err=True, fg="red")
@@ -147,7 +144,7 @@ def list():
     """
     Prints list of short urls created by user. Auth required.
     """
-    success, response = get_urls_list(access_token=get_value_from_config("access_token"))
+    success, response = get_urls_list(access_token=get_access_token())
     if not success:
         click.secho(response["message"], err=True, fg="red")
         return
@@ -176,7 +173,7 @@ def delete(short_url: str):
 
     success, *response = delete_url_by_hash(
         hash=short_url_hash,
-        access_token=get_value_from_config("access_token"),
+        access_token=get_access_token(),
     )
     if not success:
         click.secho(response[0]["message"], err=True, fg="red")
@@ -199,7 +196,7 @@ def clear_stats(short_url: str):
 
     success, *response = clear_url_stats_by_hash(
         hash=short_url_hash,
-        access_token=get_value_from_config("access_token")
+        access_token=get_access_token()
     )
     if not success:
         click.secho(response[0]["message"], err=True, fg="red")
