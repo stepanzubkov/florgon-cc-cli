@@ -21,7 +21,7 @@ from florgon_cc_cli.services.url import (
 
 @click.group()
 def url():
-    """Commands that interacts with single url."""
+    """Commands that interacts with single url or list."""
 
 
 @url.command()
