@@ -1,7 +1,9 @@
 """
     Pastes management command.
 """
+from io import TextIOWrapper
 from datetime import datetime
+from typing import List, Optional
 
 import click
 
@@ -35,11 +37,28 @@ def paste():
     default=False,
     help="Deletes paste after first reading.",
 )
-@click.argument("text", type=str)
+@click.option("-f", "--from-file", "from_files", type=click.File("r"), multiple=True, help="Read paste from file.")
+@click.option("-t", "--text", type=str, help="Paste text.")
 def create(
-    only_url: bool, do_not_save: bool, text: str, stats_is_public: bool, burn_after_read: bool
+    only_url: bool,
+    do_not_save: bool,
+    stats_is_public: bool,
+    burn_after_read: bool,
+    text: Optional[str],
+    from_files: List[TextIOWrapper],
 ):
     """Creates short url."""
+    if from_files and text:
+        click.secho("Pass --from-file or --text, but not both!", fg="red", err=True)
+        return
+    if not from_files and not text:
+        click.secho("Pass --from-file or --text!", fg="red", err=True)
+        return
+    if from_files:
+        text = ""
+        for file in from_files:
+            text += file.read()
+
     access_token = get_access_token()
     if stats_is_public and access_token is None:
         click.secho("Auth required for --stats-is-public flag!", fg="red", err=True)
