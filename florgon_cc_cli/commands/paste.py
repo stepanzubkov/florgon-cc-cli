@@ -9,6 +9,7 @@ import click
 
 from florgon_cc_cli.services.config import get_access_token
 from florgon_cc_cli.services.paste import build_paste_open_url, create_paste
+from florgon_cc_cli.services.files import concat_files
 
 
 @click.group()
@@ -55,9 +56,7 @@ def create(
         click.secho("Pass --from-file or --text!", fg="red", err=True)
         return
     if from_files:
-        text = ""
-        for file in from_files:
-            text += file.read()
+        text = concat_files(from_files)
 
     access_token = get_access_token()
     if stats_is_public and access_token is None:

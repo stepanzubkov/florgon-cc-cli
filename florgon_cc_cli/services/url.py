@@ -114,10 +114,12 @@ def request_hash_from_urls_list() -> str:
         click.secho(response["message"], err=True, fg="red")
         click.get_current_context().exit(1)
 
+    # TODO: This logic must be moved to API
+    response = [url for url in response if not url["is_expired"]]
+
     urls = [
         f"{build_open_url(url['hash'])} - {url['redirect_url']}"
         for url in response
-        if url["expires_at"] > datetime.now().timestamp()
     ]
     _, index = pick(urls, "Choose one from your urls:", indicator=">")
     return response[index]["hash"]
