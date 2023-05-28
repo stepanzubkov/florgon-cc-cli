@@ -38,7 +38,14 @@ def paste():
     default=False,
     help="Deletes paste after first reading.",
 )
-@click.option("-f", "--from-file", "from_files", type=click.File("r"), multiple=True, help="Read paste from file.")
+@click.option(
+    "-f",
+    "--from-file",
+    "from_files",
+    type=click.File("r"),
+    multiple=True,
+    help="Read paste from file.",
+)
 @click.option("-t", "--text", type=str, help="Paste text.")
 def create(
     only_url: bool,
@@ -88,7 +95,10 @@ def create(
 
 
 @paste.command()
-def list():
+@click.option(
+    "-e", "--exclude-expired", is_flag=True, default=False, help="Do not show expired pastes."
+)
+def list(exclude_expired: bool):
     """Prints a list of your pastes. Auth expired."""
     success, response = get_pastes_list(access_token=get_access_token())
     if not success:
@@ -97,11 +107,14 @@ def list():
 
     click.echo("Your pastes:")
     for paste in response:
+        # NOTE: This is temporary solution. Should be moved to cc-api.
+        if paste["is_expired"] and exclude_expired:
+            continue
+
         text_preview = paste["text"].split("\n")[0][:50] + "..."
         if paste["is_expired"]:
             click.secho(
-                    f"{build_paste_open_url(paste['hash'])} - {text_preview} (expired)", fg="red"
+                f"{build_paste_open_url(paste['hash'])} - {text_preview} (expired)", fg="red"
             )
         else:
             click.echo(f"{build_paste_open_url(paste['hash'])} - {text_preview}")
-
