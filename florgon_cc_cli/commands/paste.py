@@ -8,7 +8,7 @@ from typing import List, Optional
 import click
 
 from florgon_cc_cli.services.config import get_access_token
-from florgon_cc_cli.services.paste import build_paste_open_url, create_paste
+from florgon_cc_cli.services.paste import build_paste_open_url, create_paste, get_pastes_list
 from florgon_cc_cli.services.files import concat_files
 
 
@@ -85,3 +85,23 @@ def create(
     click.echo(f"Expires at: {datetime.fromtimestamp(response['expires_at'])}")
     if response["stats_is_public"]:
         click.echo("Stats is public")
+
+
+@paste.command()
+def list():
+    """Prints a list of your pastes. Auth expired."""
+    success, response = get_pastes_list(access_token=get_access_token())
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        return
+
+    click.echo("Your pastes:")
+    for paste in response:
+        text_preview = paste["text"].split("\n")[0][:50] + "..."
+        if paste["is_expired"]:
+            click.secho(
+                    f"{build_paste_open_url(paste['hash'])} - {text_preview} (expired)", fg="red"
+            )
+        else:
+            click.echo(f"{build_paste_open_url(paste['hash'])} - {text_preview}")
+

@@ -25,7 +25,7 @@ def create_paste(
     """
     Creates paste from text.
     :param str text: paste text
-    :param Optional[str] access_token: Florgon OAuth token that used for authentification.
+    :param Optional[str] access_token: Florgon OAuth token that used for authorization.
                                      Defaults to None
     :param bool stats_is_public: makes url stats public for all users
     :param bool burn_after_read: paste will be deleted after first reading
@@ -42,4 +42,24 @@ def create_paste(
     )
     if "success" in response:
         return True, response["success"]["paste"]
+    return False, response["error"]
+
+
+def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Paste, Error]]:
+    """
+    Returns list of user pastes by access_token.
+    :param Optional[str] access_token: Florgon OAuth token that used for authorization.
+                                       Defaults to None.
+    :rtype: Tuple[True, Paste] if successfully, else Tuple[False, Error]
+    :return: Tuple with two elements.
+             First is a response status (True if successfully).
+             Seconds is a response body.
+    """
+    response = execute_json_api_method(
+        "GET",
+        "pastes/",
+        access_token=access_token,
+    )
+    if "success" in response:
+        return True, response["success"]["pastes"]
     return False, response["error"]

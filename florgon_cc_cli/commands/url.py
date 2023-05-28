@@ -142,7 +142,7 @@ def stats(short_url: str, referers_as: str, dates_as: str):
 @url.command()
 def list():
     """
-    Prints list of short urls created by user. Auth required.
+    Prints list of your short urls. Auth required.
     """
     success, response = get_urls_list(access_token=get_access_token())
     if not success:
