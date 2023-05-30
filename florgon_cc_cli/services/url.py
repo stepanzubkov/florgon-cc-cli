@@ -1,5 +1,5 @@
 """
-    Services for working with single url API.
+    Services for working with single url API or list.
 """
 import re
 from datetime import datetime
@@ -26,8 +26,9 @@ def create_url(
     """
     Creates short url from long url.
     :param str long_url: url which short url will be redirect
-    :param Optional[str] auth_token: Florgon OAuth token that used for authentification.
+    :param Optional[str] access_token: Florgon OAuth token that used for authentification.
                                      Defaults to None
+    :param bool stats_is_public: makes url stats public for all users
     :return: Tuple with two elements.
              First is a creaton status (True if successfully).
              Seconds is a response body.
@@ -113,10 +114,12 @@ def request_hash_from_urls_list() -> str:
         click.secho(response["message"], err=True, fg="red")
         click.get_current_context().exit(1)
 
+    # TODO: This logic must be moved to API
+    response = [url for url in response if not url["is_expired"]]
+
     urls = [
         f"{build_open_url(url['hash'])} - {url['redirect_url']}"
         for url in response
-        if url["expires_at"] > datetime.now().timestamp()
     ]
     _, index = pick(urls, "Choose one from your urls:", indicator=">")
     return response[index]["hash"]
