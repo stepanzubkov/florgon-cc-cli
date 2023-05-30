@@ -1,6 +1,7 @@
 """
     Services for working with single paste API or list.
 """
+
 from typing import Optional, Tuple, Union, NoReturn
 
 import click
@@ -8,11 +9,13 @@ import click
 from pick import pick
 from florgon_cc_cli.models.url import Url
 from florgon_cc_cli.services.api import execute_json_api_method, execute_api_method, try_decode_response_to_json
+
 from florgon_cc_cli import config
 from florgon_cc_cli.models.paste import Paste
 from florgon_cc_cli.models.error import Error
 from florgon_cc_cli.services.api import execute_json_api_method
 from florgon_cc_cli.services.config import get_value_from_config
+
 
 
 def build_paste_open_url(hash: str) -> str:
@@ -69,6 +72,7 @@ def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Pas
         return True, response["success"]["pastes"]
     return False, response["error"]
 
+  
 def build_open_url(hash: str) -> str:
     """Builds url for opening short url."""
     return f"{config.URL_PASTE_OPEN_PROVIDER}/{hash}"

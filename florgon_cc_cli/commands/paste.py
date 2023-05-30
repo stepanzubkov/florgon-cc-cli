@@ -5,12 +5,14 @@ from io import TextIOWrapper
 from datetime import datetime
 from typing import List, Optional, Union, NoReturn
 
-import click, re
+import click
+import re
 
 from florgon_cc_cli.services.config import get_access_token
 from florgon_cc_cli.services.paste import build_paste_open_url, create_paste, get_pastes_list, request_hash_from_urls_list, get_url_info_by_hash, delete_url_by_hash
 from florgon_cc_cli.services.files import concat_files
 from florgon_cc_cli import config
+
 
 
 @click.group()
@@ -88,7 +90,6 @@ def create(
 
     click.echo("Short url: " + click.style(short_url, fg="green"))
     click.echo(f"Text: \n{response['text']}")
-    click.echo(response)
     if response["burn_after_read"]:
         click.secho("This paste will burn after reading!", fg="bright_yellow")
     click.echo(f"Expires at: {datetime.fromtimestamp(response['expires_at'])}")
