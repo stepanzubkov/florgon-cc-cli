@@ -8,7 +8,15 @@ from typing import List, Optional
 import click
 
 from florgon_cc_cli.services.config import get_access_token
-from florgon_cc_cli.services.paste import build_paste_open_url, create_paste, get_pastes_list
+from florgon_cc_cli.services.paste import (
+    build_paste_open_url,
+    create_paste,
+    get_pastes_list,
+    request_hash_from_pastes_list,
+    get_paste_info_by_hash,
+    delete_paste_by_hash,
+    extract_hash_from_paste_short_url,
+)
 from florgon_cc_cli.services.files import concat_files
 
 
@@ -55,7 +63,7 @@ def create(
     text: Optional[str],
     from_files: List[TextIOWrapper],
 ):
-    """Creates short url."""
+    """Creates paste from text or file."""
     if from_files and text:
         click.secho("Pass --from-file or --text, but not both!", fg="red", err=True)
         return
@@ -118,3 +126,50 @@ def list(exclude_expired: bool):
             )
         else:
             click.echo(f"{build_paste_open_url(paste['hash'])} - {text_preview}")
+
+
+@paste.command()
+@click.option("-s", "--short_url", type=str, help="Short url.")
+@click.option("-o", "--only-text", is_flag=True, default=False, help="Prints only paste text.")
+def read(short_url, only_text):
+    """Prints text and info about paste."""
+    if short_url:
+        short_url_hash = extract_hash_from_paste_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your urls.")
+        short_url_hash = request_hash_from_pastes_list()
+
+    success, response = get_paste_info_by_hash(short_url_hash)
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        return
+    if only_text:
+        click.echo("Text:\n" + response["text"].replace("\\n", "\n"))
+        return
+    click.echo(f"Expires at: {datetime.fromtimestamp(response['expires_at'])}")
+    if response["stats_is_public"]:
+        click.echo("Stats is public")
+    click.echo("Text:\n" + response["text"].replace("\\n", "\n"))
+
+
+@paste.command()
+@click.option("-s", "--short-url", type=str, help="Short url.")
+def delete(short_url: str):
+    """
+    Deletes paste. Auth Required.
+    """
+    if short_url:
+        short_url_hash = extract_hash_from_paste_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your pastes.")
+        short_url_hash = request_hash_from_pastes_list()
+
+    success, *response = delete_paste_by_hash(
+        hash=short_url_hash,
+        access_token=get_access_token(),
+    )
+    if not success:
+        click.secho(response[0]["message"], err=True, fg="red")
+        return
+    else:
+        click.secho("Paste was successfully deleted!", fg="green")
