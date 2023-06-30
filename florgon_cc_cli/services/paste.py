@@ -2,9 +2,10 @@
     Services for working with single paste API or list.
 """
 
-from typing import Optional, Tuple, Union, NoReturn
+from typing import Optional, Tuple, Union, NoReturn, List
 
 import click
+import re
 
 from pick import pick
 from florgon_cc_cli.models.url import Url
@@ -13,7 +14,6 @@ from florgon_cc_cli.services.api import execute_json_api_method, execute_api_met
 from florgon_cc_cli import config
 from florgon_cc_cli.models.paste import Paste
 from florgon_cc_cli.models.error import Error
-from florgon_cc_cli.services.api import execute_json_api_method
 from florgon_cc_cli.services.config import get_value_from_config
 
 
@@ -49,11 +49,14 @@ def create_paste(
         access_token=access_token,
     )
     if "success" in response:
+        response["success"]["paste"]["text"] = response["success"]["paste"]["text"].replace(
+            "\\n", "\n"
+        )
         return True, response["success"]["paste"]
     return False, response["error"]
 
 
-def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Paste, Error]]:
+def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[List[Paste], Error]]:
     """
     Returns list of user pastes by access_token.
     :param Optional[str] access_token: Florgon OAuth token that used for authorization.
@@ -69,34 +72,58 @@ def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Pas
         access_token=access_token,
     )
     if "success" in response:
-        return True, response["success"]["pastes"]
+        pastes: List[Paste] = []
+        for paste in response["success"]["pastes"]:
+            paste["text"] = paste["text"].replace("\\n", "\n")
+            pastes.append(paste)
+        return True, pastes
     return False, response["error"]
 
-  
+
 def build_open_url(hash: str) -> str:
     """Builds url for opening short url."""
     return f"{config.URL_PASTE_OPEN_PROVIDER}/{hash}"
 
 
-def request_hash_from_urls_list() -> str:
+def request_hash_from_pastes_list() -> str:
     success, response = get_pastes_list(access_token=get_value_from_config("access_token"))
     if not success:
         click.secho(response["message"], err=True, fg="red")
         click.get_current_context().exit(1)
 
     # TODO: This logic must be moved to API
-    response = [url for url in response if not url["is_expired"]]
+    response = [paste for paste in response if not paste["is_expired"]]
 
-    urls = [
-        f"{build_open_url(url['hash'])} - {url['redirect_url']}"
-        for url in response
+    nl = "\n"
+    pastes = [
+        f"{build_paste_open_url(paste['hash'])} - {paste['text'].split(nl)[0][:50] + '...'}"
+        for paste in response
     ]
-    _, index = pick(urls, "Choose one from your urls:", indicator=">")
+    _, index = pick(pastes, "Choose one from your pastes:", indicator=">")
     return response[index]["hash"]
 
-def get_url_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
+
+def extract_hash_from_paste_short_url(short_url: str) -> Union[str, NoReturn]:
     """
-    Returns info about short url by hash.
+    Extracts hash from paste short url.
+    :param str short_url: paste short url
+    :rtype: Union[str, NoReturn]
+    :return: paste hash or exit application
+    """
+    short_url_hashes = re.findall(f"^{config.URL_PASTE_OPEN_PROVIDER}" + r"/([a-zA-Z0-9]{6})$", short_url)
+    if not short_url_hashes:
+        click.secho(
+            f"Short url is invalid! It should be in form '{config.URL_PASTE_OPEN_PROVIDER}/xxxxxx'",
+            err=True,
+            fg="red",
+        )
+        click.get_current_context().exit(1)
+
+    return short_url_hashes[0]
+
+def get_paste_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
+    """
+    Returns info about paste short url by hash.
     :param str hash: short url hash
     :return: Tuple with two elements.
              First is a response status (True if successfully).
@@ -105,12 +132,15 @@ def get_url_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
     """
     response = execute_json_api_method("GET", f"pastes/{hash}/")
     if "success" in response:
+        response["success"]["paste"]["text"] = response["success"]["paste"]["text"].replace(
+            "\\n", "\n"
+        )
         return True, response["success"]["paste"]
     return False, response["error"]
 
-def delete_url_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+def delete_paste_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
     """
-    Deletes user's url by access_token.
+    Deletes user's paste by access_token.
     :param str hash: url hash
     :param Optional[str] access_token: access token
     :return: Tuple with two or one elements.
