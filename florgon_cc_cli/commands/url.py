@@ -37,9 +37,7 @@ def url():
     help="Make url stats public. Auth required.",
 )
 @click.argument("long_url", type=str)
-def create(
-    only_url: bool, do_not_save: bool, long_url: str, stats_is_public: bool
-):
+def create(only_url: bool, do_not_save: bool, long_url: str, stats_is_public: bool):
     """Creates short url."""
     access_token = get_access_token()
     if stats_is_public and access_token is None:
@@ -195,8 +193,7 @@ def clear_stats(short_url: str):
         short_url_hash = request_hash_from_urls_list()
 
     success, *response = clear_url_stats_by_hash(
-        hash=short_url_hash,
-        access_token=get_access_token()
+        hash=short_url_hash, access_token=get_access_token()
     )
     if not success:
         click.secho(response[0]["message"], err=True, fg="red")

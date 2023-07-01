@@ -136,8 +136,8 @@ def read(short_url, only_text):
     if short_url:
         short_url_hash = extract_hash_from_paste_short_url(short_url)
     else:
-        click.echo("Short url is not specified, requesting for list of your urls.")
-        short_url_hash = request_hash_from_pastes_list()
+        click.echo("Short url is not specified, requesting for list of your pastes.")
+        short_url_hash = request_hash_from_pastes_list(access_token=get_access_token())
 
     success, response = get_paste_info_by_hash(short_url_hash)
     if not success:
@@ -149,6 +149,8 @@ def read(short_url, only_text):
     click.echo(f"Expires at: {datetime.fromtimestamp(response['expires_at'])}")
     if response["stats_is_public"]:
         click.echo("Stats is public")
+    if response["burn_after_read"]:
+        click.secho("This paste will burn after reading!", fg="bright_yellow")
     click.echo("Text:\n" + response["text"].replace("\\n", "\n"))
 
 
@@ -162,7 +164,7 @@ def delete(short_url: str):
         short_url_hash = extract_hash_from_paste_short_url(short_url)
     else:
         click.echo("Short url is not specified, requesting for list of your pastes.")
-        short_url_hash = request_hash_from_pastes_list()
+        short_url_hash = request_hash_from_pastes_list(access_token=get_access_token())
 
     success, *response = delete_paste_by_hash(
         hash=short_url_hash,

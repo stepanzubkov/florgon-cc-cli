@@ -2,20 +2,21 @@
     Services for working with single paste API or list.
 """
 
-from typing import Optional, Tuple, Union, NoReturn, List
+from typing import Optional, Tuple, Union, NoReturn, List, Literal
 
 import click
 import re
-
 from pick import pick
-from florgon_cc_cli.models.url import Url
-from florgon_cc_cli.services.api import execute_json_api_method, execute_api_method, try_decode_response_to_json
 
+from florgon_cc_cli.models.url import Url
+from florgon_cc_cli.services.api import (
+    execute_json_api_method,
+    execute_api_method,
+    try_decode_response_to_json,
+)
 from florgon_cc_cli import config
 from florgon_cc_cli.models.paste import Paste
 from florgon_cc_cli.models.error import Error
-from florgon_cc_cli.services.config import get_value_from_config
-
 
 
 def build_paste_open_url(hash: str) -> str:
@@ -29,7 +30,7 @@ def create_paste(
     stats_is_public: bool = False,
     burn_after_read: bool = False,
     access_token: Optional[str] = None,
-) -> Tuple[bool, Union[Paste, Error]]:
+) -> Union[Tuple[Literal[True], Paste], Tuple[Literal[False], Error]]:
     """
     Creates paste from text.
     :param str text: paste text
@@ -56,7 +57,9 @@ def create_paste(
     return False, response["error"]
 
 
-def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[List[Paste], Error]]:
+def get_pastes_list(
+    access_token: Optional[str] = None,
+) -> Union[Tuple[Literal[True], List[Paste]], Tuple[Literal[False], Error]]:
     """
     Returns list of user pastes by access_token.
     :param Optional[str] access_token: Florgon OAuth token that used for authorization.
@@ -80,13 +83,14 @@ def get_pastes_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Lis
     return False, response["error"]
 
 
-def build_open_url(hash: str) -> str:
-    """Builds url for opening short url."""
-    return f"{config.URL_PASTE_OPEN_PROVIDER}/{hash}"
-
-
-def request_hash_from_pastes_list() -> str:
-    success, response = get_pastes_list(access_token=get_value_from_config("access_token"))
+def request_hash_from_pastes_list(access_token: Optional[str] = None) -> Union[str, NoReturn]:
+    """
+    Requests server for pastes list and requests user to choose one.
+    :param str access_token: Access token
+    :returns: Paste hash
+    :rtype: str
+    """
+    success, response = get_pastes_list(access_token=access_token)
     if not success:
         click.secho(response["message"], err=True, fg="red")
         click.get_current_context().exit(1)
@@ -110,7 +114,9 @@ def extract_hash_from_paste_short_url(short_url: str) -> Union[str, NoReturn]:
     :rtype: Union[str, NoReturn]
     :return: paste hash or exit application
     """
-    short_url_hashes = re.findall(f"^{config.URL_PASTE_OPEN_PROVIDER}" + r"/([a-zA-Z0-9]{6})$", short_url)
+    short_url_hashes = re.findall(
+        f"^{config.URL_PASTE_OPEN_PROVIDER}" + r"/([a-zA-Z0-9]{6})$", short_url
+    )
     if not short_url_hashes:
         click.secho(
             f"Short url is invalid! It should be in form '{config.URL_PASTE_OPEN_PROVIDER}/xxxxxx'",
@@ -120,6 +126,7 @@ def extract_hash_from_paste_short_url(short_url: str) -> Union[str, NoReturn]:
         click.get_current_context().exit(1)
 
     return short_url_hashes[0]
+
 
 def get_paste_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
     """
@@ -138,7 +145,10 @@ def get_paste_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
         return True, response["success"]["paste"]
     return False, response["error"]
 
-def delete_paste_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+
+def delete_paste_by_hash(
+    hash: str, access_token: Optional[str] = None
+) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
     """
     Deletes user's paste by access_token.
     :param str hash: url hash
@@ -151,5 +161,5 @@ def delete_paste_by_hash(hash: str, access_token: Optional[str] = None) -> Union
     """
     response = execute_api_method("DELETE", f"pastes/{hash}/", access_token=access_token)
     if response.status_code == 204:
-        return True,
+        return (True,)
     return try_decode_response_to_json(response)

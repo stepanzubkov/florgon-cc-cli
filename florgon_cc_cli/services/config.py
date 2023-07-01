@@ -38,6 +38,7 @@ def save_value_to_config(key: str, value: Any) -> None:
 def get_value_from_config(key: str) -> Any:
     """
     Returns value from config by key.
+    NOTE: Do not use this function to get access token, use get_access_token() instead!
     :param str key: key for value
     :rtype: Any
     """

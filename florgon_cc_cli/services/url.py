@@ -2,13 +2,16 @@
     Services for working with single url API or list.
 """
 import re
-from datetime import datetime
-from typing import Any, Tuple, Optional, Union, NoReturn
+from typing import Tuple, Optional, Union, NoReturn, Literal, List
 
 import click
 from pick import pick
 
-from florgon_cc_cli.services.api import execute_json_api_method, execute_api_method, try_decode_response_to_json
+from florgon_cc_cli.services.api import (
+    execute_json_api_method,
+    execute_api_method,
+    try_decode_response_to_json,
+)
 from florgon_cc_cli.services.config import get_value_from_config
 from florgon_cc_cli.models.url import Url
 from florgon_cc_cli.models.error import Error
@@ -22,7 +25,7 @@ def build_open_url(hash: str) -> str:
 
 def create_url(
     long_url: str, stats_is_public: bool = False, access_token: Optional[str] = None
-) -> Tuple[bool, Union[Url, Error]]:
+) -> Union[Tuple[Literal[True], Url], Tuple[Literal[False], Error]]:
     """
     Creates short url from long url.
     :param str long_url: url which short url will be redirect
@@ -46,7 +49,9 @@ def create_url(
     return False, response["error"]
 
 
-def get_url_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
+def get_url_info_by_hash(
+    hash: str,
+) -> Union[Tuple[Literal[True], Url], Tuple[Literal[False], Error]]:
     """
     Returns info about short url by hash.
     :param str hash: short url hash
@@ -61,19 +66,20 @@ def get_url_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
     return False, response["error"]
 
 
+# No return type yet, `Stats` model need to be implemented
 def get_url_stats_by_hash(
     hash: str,
     url_views_by_referers_as: str = "percent",
     url_views_by_dates_as: str = "percent",
     access_token: Optional[str] = None,
-) -> Tuple[bool, Union[Url, Error]]:
+):
     """
     Returns statistics about short url by hash.
     :param str hash: short url hash
     :return: Tuple with two elements.
              First is a response status (True if successfully).
              Seconds is a response body.
-    :rtype: Tuple[True, Url] if request is successfully, else Tuple[False, Error]
+    :rtype: Stats
     """
     response = execute_json_api_method(
         "GET",
@@ -108,7 +114,7 @@ def extract_hash_from_short_url(short_url: str) -> Union[str, NoReturn]:
     return short_url_hashes[0]
 
 
-def request_hash_from_urls_list() -> str:
+def request_hash_from_urls_list() -> Union[str, NoReturn]:
     success, response = get_urls_list(access_token=get_value_from_config("access_token"))
     if not success:
         click.secho(response["message"], err=True, fg="red")
@@ -117,15 +123,14 @@ def request_hash_from_urls_list() -> str:
     # TODO: This logic must be moved to API
     response = [url for url in response if not url["is_expired"]]
 
-    urls = [
-        f"{build_open_url(url['hash'])} - {url['redirect_url']}"
-        for url in response
-    ]
+    urls = [f"{build_open_url(url['hash'])} - {url['redirect_url']}" for url in response]
     _, index = pick(urls, "Choose one from your urls:", indicator=">")
     return response[index]["hash"]
 
 
-def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Url, Error]]:
+def get_urls_list(
+    access_token: Optional[str] = None,
+) -> Union[Tuple[Literal[True], List[Url]], Tuple[Literal[False], Error]]:
     """
     Returns user's urls by access_token.
     :param Optional[str] access_token: access token
@@ -140,7 +145,9 @@ def get_urls_list(access_token: Optional[str] = None) -> Tuple[bool, Union[Url, 
     return False, response["error"]
 
 
-def delete_url_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+def delete_url_by_hash(
+    hash: str, access_token: Optional[str] = None
+) -> Union[Tuple[Literal[True]], Tuple[Literal[False], Error], NoReturn]:
     """
     Deletes user's url by access_token.
     :param str hash: url hash
@@ -153,11 +160,13 @@ def delete_url_by_hash(hash: str, access_token: Optional[str] = None) -> Union[T
     """
     response = execute_api_method("DELETE", f"urls/{hash}/", access_token=access_token)
     if response.status_code == 204:
-        return True,
+        return (True,)
     return try_decode_response_to_json(response)
 
 
-def clear_url_stats_by_hash(hash: str, access_token: Optional[str] = None) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+def clear_url_stats_by_hash(
+    hash: str, access_token: Optional[str] = None
+) -> Union[Tuple[Literal[True]], Tuple[Literal[False], Error], NoReturn]:
     """
     Clears user's url stats by access_token.
     :param str hash: url hash
@@ -170,5 +179,5 @@ def clear_url_stats_by_hash(hash: str, access_token: Optional[str] = None) -> Un
     """
     response = execute_api_method("DELETE", f"urls/{hash}/stats", access_token=access_token)
     if response.status_code == 204:
-        return True,
+        return (True,)
     return try_decode_response_to_json(response)
