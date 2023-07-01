@@ -1,0 +1,165 @@
+"""
+    Services for working with single paste API or list.
+"""
+
+from typing import Optional, Tuple, Union, NoReturn, List, Literal
+
+import click
+import re
+from pick import pick
+
+from florgon_cc_cli.models.url import Url
+from florgon_cc_cli.services.api import (
+    execute_json_api_method,
+    execute_api_method,
+    try_decode_response_to_json,
+)
+from florgon_cc_cli import config
+from florgon_cc_cli.models.paste import Paste
+from florgon_cc_cli.models.error import Error
+
+
+def build_paste_open_url(hash: str) -> str:
+    """Builds url for opening paste."""
+    return f"{config.URL_PASTE_OPEN_PROVIDER}/{hash}"
+
+
+def create_paste(
+    text: str,
+    *,
+    stats_is_public: bool = False,
+    burn_after_read: bool = False,
+    access_token: Optional[str] = None,
+) -> Union[Tuple[Literal[True], Paste], Tuple[Literal[False], Error]]:
+    """
+    Creates paste from text.
+    :param str text: paste text
+    :param Optional[str] access_token: Florgon OAuth token that used for authorization.
+                                     Defaults to None
+    :param bool stats_is_public: makes url stats public for all users
+    :param bool burn_after_read: paste will be deleted after first reading
+    :return: Tuple with two elements.
+             First is a creaton status (True if successfully).
+             Seconds is a response body.
+    :rtype: Tuple[True, Paste] if request is successfully, else Tuple[False, Error]
+    """
+    response = execute_json_api_method(
+        "POST",
+        "pastes/",
+        data={"text": text, "stats_is_public": stats_is_public, "burn_after_read": burn_after_read},
+        access_token=access_token,
+    )
+    if "success" in response:
+        response["success"]["paste"]["text"] = response["success"]["paste"]["text"].replace(
+            "\\n", "\n"
+        )
+        return True, response["success"]["paste"]
+    return False, response["error"]
+
+
+def get_pastes_list(
+    access_token: Optional[str] = None,
+) -> Union[Tuple[Literal[True], List[Paste]], Tuple[Literal[False], Error]]:
+    """
+    Returns list of user pastes by access_token.
+    :param Optional[str] access_token: Florgon OAuth token that used for authorization.
+                                       Defaults to None.
+    :rtype: Tuple[True, Paste] if successfully, else Tuple[False, Error]
+    :return: Tuple with two elements.
+             First is a response status (True if successfully).
+             Seconds is a response body.
+    """
+    response = execute_json_api_method(
+        "GET",
+        "pastes/",
+        access_token=access_token,
+    )
+    if "success" in response:
+        pastes: List[Paste] = []
+        for paste in response["success"]["pastes"]:
+            paste["text"] = paste["text"].replace("\\n", "\n")
+            pastes.append(paste)
+        return True, pastes
+    return False, response["error"]
+
+
+def request_hash_from_pastes_list(access_token: Optional[str] = None) -> Union[str, NoReturn]:
+    """
+    Requests server for pastes list and requests user to choose one.
+    :param str access_token: Access token
+    :returns: Paste hash
+    :rtype: str
+    """
+    success, response = get_pastes_list(access_token=access_token)
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        click.get_current_context().exit(1)
+
+    # TODO: This logic must be moved to API
+    response = [paste for paste in response if not paste["is_expired"]]
+
+    nl = "\n"
+    pastes = [
+        f"{build_paste_open_url(paste['hash'])} - {paste['text'].split(nl)[0][:50] + '...'}"
+        for paste in response
+    ]
+    _, index = pick(pastes, "Choose one from your pastes:", indicator=">")
+    return response[index]["hash"]
+
+
+def extract_hash_from_paste_short_url(short_url: str) -> Union[str, NoReturn]:
+    """
+    Extracts hash from paste short url.
+    :param str short_url: paste short url
+    :rtype: Union[str, NoReturn]
+    :return: paste hash or exit application
+    """
+    short_url_hashes = re.findall(
+        f"^{config.URL_PASTE_OPEN_PROVIDER}" + r"/([a-zA-Z0-9]{6})$", short_url
+    )
+    if not short_url_hashes:
+        click.secho(
+            f"Short url is invalid! It should be in form '{config.URL_PASTE_OPEN_PROVIDER}/xxxxxx'",
+            err=True,
+            fg="red",
+        )
+        click.get_current_context().exit(1)
+
+    return short_url_hashes[0]
+
+
+def get_paste_info_by_hash(hash: str) -> Tuple[bool, Union[Url, Error]]:
+    """
+    Returns info about paste short url by hash.
+    :param str hash: short url hash
+    :return: Tuple with two elements.
+             First is a response status (True if successfully).
+             Seconds is a response body.
+    :rtype: Tuple[True, Url] if request is successfully, else Tuple[True, Error]
+    """
+    response = execute_json_api_method("GET", f"pastes/{hash}/")
+    if "success" in response:
+        response["success"]["paste"]["text"] = response["success"]["paste"]["text"].replace(
+            "\\n", "\n"
+        )
+        return True, response["success"]["paste"]
+    return False, response["error"]
+
+
+def delete_paste_by_hash(
+    hash: str, access_token: Optional[str] = None
+) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
+    """
+    Deletes user's paste by access_token.
+    :param str hash: url hash
+    :param Optional[str] access_token: access token
+    :return: Tuple with two or one elements.
+             First is a deletion status (True if successfully).
+             Seconds is a response body (if error).
+    :rtype: Tuple[True] if successfully deleted, Tuple[False, Error] if error occured,
+            or exit application if cannot decode to json
+    """
+    response = execute_api_method("DELETE", f"pastes/{hash}/", access_token=access_token)
+    if response.status_code == 204:
+        return (True,)
+    return try_decode_response_to_json(response)

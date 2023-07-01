@@ -1,10 +1,23 @@
 """
     Services for working with user config.
 """
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import toml
 
+import click
+
 from florgon_cc_cli import config
+
+
+def get_access_token() -> Optional[str]:
+    """
+    Return access_token from user config or
+    returns None if passed --anonymous flag.
+    :returns: access token
+    :rtype: Optional[str]
+    """
+    ctx = click.get_current_context()
+    return None if ctx.obj["ANONYMOUS"] else get_value_from_config("access_token")
 
 
 def save_value_to_config(key: str, value: Any) -> None:
@@ -25,6 +38,7 @@ def save_value_to_config(key: str, value: Any) -> None:
 def get_value_from_config(key: str) -> Any:
     """
     Returns value from config by key.
+    NOTE: Do not use this function to get access token, use get_access_token() instead!
     :param str key: key for value
     :rtype: Any
     """

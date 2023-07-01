@@ -5,7 +5,7 @@ from datetime import datetime
 
 import click
 
-from florgon_cc_cli.services.config import get_value_from_config
+from florgon_cc_cli.services.config import get_value_from_config, get_access_token
 from florgon_cc_cli.services.url import (
     build_open_url,
     create_url,
@@ -21,16 +21,13 @@ from florgon_cc_cli.services.url import (
 
 @click.group()
 def url():
-    """Commands that interacts with single url."""
+    """Commands that interacts with single url or list."""
 
 
 @url.command()
 @click.option("-o", "--only-url", is_flag=True, default=False, help="Outputs single short url.")
 @click.option(
     "-d", "--do-not-save", is_flag=True, default=False, help="Do not save url in local history."
-)
-@click.option(
-    "-a", "--anonymous", is_flag=True, default=False, help="Do not use access token for request."
 )
 @click.option(
     "-s",
@@ -40,11 +37,9 @@ def url():
     help="Make url stats public. Auth required.",
 )
 @click.argument("long_url", type=str)
-def create(
-    only_url: bool, do_not_save: bool, long_url: str, anonymous: bool, stats_is_public: bool
-):
+def create(only_url: bool, do_not_save: bool, long_url: str, stats_is_public: bool):
     """Creates short url."""
-    access_token = None if anonymous else get_value_from_config("access_token")
+    access_token = get_access_token()
     if stats_is_public and access_token is None:
         click.secho("Auth required for --stats-is-public flag!", fg="red", err=True)
         return
@@ -119,7 +114,7 @@ def stats(short_url: str, referers_as: str, dates_as: str):
         short_url_hash,
         url_views_by_referers_as=referers_as,
         url_views_by_dates_as=dates_as,
-        access_token=get_value_from_config("access_token"),
+        access_token=get_access_token(),
     )
     if not success:
         click.secho(response["message"], err=True, fg="red")
@@ -145,9 +140,9 @@ def stats(short_url: str, referers_as: str, dates_as: str):
 @url.command()
 def list():
     """
-    Prints list of short urls created by user. Auth required.
+    Prints list of your short urls. Auth required.
     """
-    success, response = get_urls_list(access_token=get_value_from_config("access_token"))
+    success, response = get_urls_list(access_token=get_access_token())
     if not success:
         click.secho(response["message"], err=True, fg="red")
         return
@@ -176,7 +171,7 @@ def delete(short_url: str):
 
     success, *response = delete_url_by_hash(
         hash=short_url_hash,
-        access_token=get_value_from_config("access_token"),
+        access_token=get_access_token(),
     )
     if not success:
         click.secho(response[0]["message"], err=True, fg="red")
@@ -198,8 +193,7 @@ def clear_stats(short_url: str):
         short_url_hash = request_hash_from_urls_list()
 
     success, *response = clear_url_stats_by_hash(
-        hash=short_url_hash,
-        access_token=get_value_from_config("access_token")
+        hash=short_url_hash, access_token=get_access_token()
     )
     if not success:
         click.secho(response[0]["message"], err=True, fg="red")

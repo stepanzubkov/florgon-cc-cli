@@ -17,7 +17,7 @@ def execute_json_api_method(
     data: Dict[str, Any] = {},
     params: Dict[str, Any] = {},
     access_token: Optional[str] = None,
-) -> Dict[str, Any] | NoReturn:
+) -> Union[Dict[str, Any], NoReturn]:
     """
     Executes API method.
     :param str http_method: GET, POST, PUT, PATCH, DELETE or OPTIONS
