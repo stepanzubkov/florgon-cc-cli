@@ -26,6 +26,11 @@ toml = "^0.10.2"
 [tool.poetry.scripts]
 florgon-cc = "florgon_cc_cli.main:main"
 
+[[tool.poetry.source]]
+name = "test"
+url = "https://test.pypi.org/legacy/"
+priority = "primary"
+
 [tool.black]
 line-length = 100
 
