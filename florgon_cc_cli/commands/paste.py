@@ -16,6 +16,7 @@ from florgon_cc_cli.services.paste import (
     get_paste_info_by_hash,
     delete_paste_by_hash,
     extract_hash_from_paste_short_url,
+    get_paste_stats_by_hash,
 )
 from florgon_cc_cli.services.files import concat_files
 
@@ -175,3 +176,54 @@ def delete(short_url: str):
         return
     else:
         click.secho("Paste was successfully deleted!", fg="green")
+
+
+@paste.command()
+@click.option("-s", "--short-url", type=str, help="Short url.")
+@click.option(
+    "-r",
+    "--referers-as",
+    type=click.Choice(["percent", "number"]),
+    default="percent",
+    help="Paste views referers as.",
+)
+@click.option(
+    "-d",
+    "--dates-as",
+    type=click.Choice(["percent", "number"]),
+    default="percent",
+    help="Paste views dates as.",
+)
+def stats(short_url: str, referers_as: str, dates_as: str):
+    """Prints paste views statistics."""
+    if short_url:
+        paste_hash = extract_hash_from_paste_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your pastes.")
+        paste_hash = request_hash_from_pastes_list(access_token=get_access_token())
+
+    success, response = get_paste_stats_by_hash(
+        paste_hash,
+        url_views_by_referers_as=referers_as,
+        url_views_by_dates_as=dates_as,
+        access_token=get_access_token(),
+    )
+    if not success:
+        click.secho(response["message"], err=True, fg="red")
+        return
+
+    click.echo("Total views: " + click.style(response["total"], fg="green"))
+    if response.get("by_referers"):
+        click.echo("Views by referers:")
+        for referer in response["by_referers"]:
+            click.echo(
+                f"\t{referer} - {response['by_referers'][referer]}"
+                + "%" * int(referers_as == "percent")
+            )
+
+    if response.get("by_dates"):
+        click.echo("Views by dates:")
+        for date in response["by_dates"]:
+            click.echo(
+                f"\t{date} - {response['by_dates'][date]}" + "%" * int(dates_as == "percent")
+            )

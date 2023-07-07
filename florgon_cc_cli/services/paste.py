@@ -17,6 +17,7 @@ from florgon_cc_cli.services.api import (
 from florgon_cc_cli import config
 from florgon_cc_cli.models.paste import Paste
 from florgon_cc_cli.models.error import Error
+from florgon_cc_cli.models.stats import Stats
 
 
 def build_paste_open_url(hash: str) -> str:
@@ -151,7 +152,7 @@ def delete_paste_by_hash(
 ) -> Union[Tuple[bool, Optional[Error]], NoReturn]:
     """
     Deletes user's paste by access_token.
-    :param str hash: url hash
+    :param str hash: paste hash
     :param Optional[str] access_token: access token
     :return: Tuple with two or one elements.
              First is a deletion status (True if successfully).
@@ -163,3 +164,32 @@ def delete_paste_by_hash(
     if response.status_code == 204:
         return (True,)
     return try_decode_response_to_json(response)
+
+
+def get_paste_stats_by_hash(
+    hash: str,
+    url_views_by_referers_as: str = "percent",
+    url_views_by_dates_as: str = "percent",
+    access_token: Optional[str] = None,
+) -> Union[Tuple[Literal[True], Stats], Tuple[Literal[False], Error], NoReturn]:
+    """
+    Returns statistics about paste by hash.
+    :param str hash: paste hash
+    :return: Tuple with two elements.
+             First is a response status (True if successfully).
+             Seconds is a response body.
+    :rtype: Tuple[True, Stats] if response requested successfully, Tuple[False, Error] if error occured,
+            or exit application if cannot decode response to json
+    """
+    response = execute_json_api_method(
+        "GET",
+        f"pastes/{hash}/stats",
+        params={
+            "referer_views_value_as": url_views_by_referers_as,
+            "dates_views_value_as": url_views_by_dates_as,
+        },
+        access_token=access_token,
+    )
+    if "success" in response:
+        return True, response["success"]["views"]
+    return False, response["error"]
