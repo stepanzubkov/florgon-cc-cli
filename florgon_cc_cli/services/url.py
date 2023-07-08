@@ -144,7 +144,8 @@ def get_urls_list(
     """
     response = execute_json_api_method("GET", "urls/", access_token=access_token)
     if "success" in response:
-        return True, response["success"]["urls"]
+        # NOTE: This is temporary solution. Should be moved to cc-api.
+        return True, [url for url in response["success"]["urls"] if not url["is_deleted"]]
     return False, response["error"]
 
 

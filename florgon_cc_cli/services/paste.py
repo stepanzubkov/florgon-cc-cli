@@ -77,8 +77,10 @@ def get_pastes_list(
     if "success" in response:
         pastes: List[Paste] = []
         for paste in response["success"]["pastes"]:
-            paste["text"] = paste["text"].replace("\\n", "\n")
-            pastes.append(paste)
+            # NOTE: This is temporary solution. Should be moved to cc-api.
+            if not paste["is_deleted"]:
+                paste["text"] = paste["text"].replace("\\n", "\n")
+                pastes.append(paste)
         return True, pastes
     return False, response["error"]
 
