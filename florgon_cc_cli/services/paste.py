@@ -77,8 +77,10 @@ def get_pastes_list(
     if "success" in response:
         pastes: List[Paste] = []
         for paste in response["success"]["pastes"]:
-            paste["text"] = paste["text"].replace("\\n", "\n")
-            pastes.append(paste)
+            # NOTE: This is temporary solution. Should be moved to cc-api.
+            if not paste["is_deleted"]:
+                paste["text"] = paste["text"].replace("\\n", "\n")
+                pastes.append(paste)
         return True, pastes
     return False, response["error"]
 
@@ -96,15 +98,18 @@ def request_hash_from_pastes_list(access_token: Optional[str] = None) -> Union[s
         click.get_current_context().exit(1)
 
     # TODO: This logic must be moved to API
-    response = [paste for paste in response if not paste["is_expired"]]
+    pastes = [paste for paste in response if not paste["is_expired"] and not paste["is_deleted"]]
+    if not pastes:
+        click.secho("You have not active pastes!", fg="red", err=True)
+        click.get_current_context().exit(1)
 
     nl = "\n"
-    pastes = [
+    pastes_formatted = [
         f"{build_paste_open_url(paste['hash'])} - {paste['text'].split(nl)[0][:50] + '...'}"
-        for paste in response
+        for paste in pastes
     ]
-    _, index = pick(pastes, "Choose one from your pastes:", indicator=">")
-    return response[index]["hash"]
+    _, index = pick(pastes_formatted, "Choose one from your pastes:", indicator=">")
+    return pastes[index]["hash"]
 
 
 def extract_hash_from_paste_short_url(short_url: str) -> Union[str, NoReturn]:

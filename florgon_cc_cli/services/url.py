@@ -121,11 +121,14 @@ def request_hash_from_urls_list() -> Union[str, NoReturn]:
         click.get_current_context().exit(1)
 
     # TODO: This logic must be moved to API
-    response = [url for url in response if not url["is_expired"]]
+    urls = [url for url in response if not url["is_expired"] and not url["is_deleted"]]
+    if not urls:
+        click.secho("You have not active pastes!", fg="red", err=True)
+        click.get_current_context().exit(1)
 
-    urls = [f"{build_open_url(url['hash'])} - {url['redirect_url']}" for url in response]
-    _, index = pick(urls, "Choose one from your urls:", indicator=">")
-    return response[index]["hash"]
+    urls_formatted = [f"{build_open_url(url['hash'])} - {url['redirect_url']}" for url in urls]
+    _, index = pick(urls_formatted, "Choose one from your urls:", indicator=">")
+    return urls[index]["hash"]
 
 
 def get_urls_list(
@@ -141,7 +144,8 @@ def get_urls_list(
     """
     response = execute_json_api_method("GET", "urls/", access_token=access_token)
     if "success" in response:
-        return True, response["success"]["urls"]
+        # NOTE: This is temporary solution. Should be moved to cc-api.
+        return True, [url for url in response["success"]["urls"] if not url["is_deleted"]]
     return False, response["error"]
 
 
