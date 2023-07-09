@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "florgon-cc-cli"
-version = "0.9.1"
+version = "0.10.0"
 license = "MIT"
 homepage = "https://cc.florgon.com/"
 keywords = ["cli", "url shortener", "paste manager"]
@@ -30,7 +30,6 @@ florgon-cc = "florgon_cc_cli.main:main"
 name = "test"
 url = "https://test.pypi.org/legacy/"
 priority = "primary"
-
 
 [[tool.poetry.source]]
 name = "PyPI"
