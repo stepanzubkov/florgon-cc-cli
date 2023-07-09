@@ -17,6 +17,7 @@ from florgon_cc_cli.services.paste import (
     delete_paste_by_hash,
     extract_hash_from_paste_short_url,
     get_paste_stats_by_hash,
+    clear_paste_stats_by_hash,
 )
 from florgon_cc_cli.services.files import concat_files
 
@@ -227,3 +228,26 @@ def stats(short_url: str, referers_as: str, dates_as: str):
             click.echo(
                 f"\t{date} - {response['by_dates'][date]}" + "%" * int(dates_as == "percent")
             )
+
+
+@paste.command()
+@click.option("-s", "--short-url", type=str, help="Short url.")
+def clear_stats(short_url: str):
+    """
+    Clears paste stats. Auth required.
+    If short url is not passed, you can choose it from your pastes interactively.
+    """
+    if short_url:
+        short_url_hash = extract_hash_from_paste_short_url(short_url)
+    else:
+        click.echo("Short url is not specified, requesting for list of your pastes.")
+        short_url_hash = request_hash_from_pastes_list(access_token=get_access_token())
+
+    success, *response = clear_paste_stats_by_hash(
+        hash=short_url_hash, access_token=get_access_token()
+    )
+    if not success:
+        click.secho(response[0]["message"], err=True, fg="red")
+        return
+
+    click.secho("Paste stats was successfully cleared!", fg="green")

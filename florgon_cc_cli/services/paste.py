@@ -198,3 +198,22 @@ def get_paste_stats_by_hash(
     if "success" in response:
         return True, response["success"]["views"]
     return False, response["error"]
+
+
+def clear_paste_stats_by_hash(
+    hash: str, access_token: Optional[str] = None
+) -> Union[Tuple[Literal[True]], Tuple[Literal[False], Error], NoReturn]:
+    """
+    Clears user's paste stats by access_token.
+    :param str hash: paste hash
+    :param Optional[str] access_token: access token
+    :return: Tuple with two or one elements.
+             First is a clearsing status (True if successfully).
+             Seconds is a response body (if error).
+    :rtype: Tuple[True] if successfully cleared, Tuple[False, Error] if error occured,
+            or exit application if cannot decode to json
+    """
+    response = execute_api_method("DELETE", f"pastes/{hash}/stats", access_token=access_token)
+    if response.status_code == 204:
+        return (True,)
+    return try_decode_response_to_json(response)
